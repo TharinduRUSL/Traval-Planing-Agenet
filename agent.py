@@ -13,6 +13,7 @@ LOGGER = logging.getLogger(__name__)
 from tools import TOOLS, TOOL_MAP
 
 load_dotenv(Path(__file__).parent / ".env")
+# qwen2.5:3b is a compact 3-billion-parameter tool-calling model for local laptops.
 
 MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:3b")
 MAX_STEPS = 10
@@ -35,7 +36,7 @@ Be concise, honest about unavailable data, and clear about estimates. Do not exp
 
 
 def new_history():
-    return [{"role": "system", "content": SYSTEM_PROMPT}]
+    return [{"role": "system", "content": SYSTEM_PROMPT + f"\nSession start date: {date.today().isoformat()}."}]
 
 
 def make_client():
