@@ -1,0 +1,94 @@
+
+/* ---------- Global ---------- */
+.stApp {
+    background: linear-gradient(145deg, #f0f9ff 0%, #e0f2fe 40%, #f0fdfa 100%);
+    color: #0f172a;
+}
+.block-container {
+    max-width: 1120px;
+    padding-top: 1.8rem;
+    padding-bottom: 3rem;
+}
+
+/* ---------- Sidebar ---------- */
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+    border-right: 1px solid #334155;
+}
+section[data-testid="stSidebar"] * {
+    color: #e2e8f0 !important;
+}
+section[data-testid="stSidebar"] .stMarkdown h1,
+section[data-testid="stSidebar"] .stMarkdown h2,
+section[data-testid="stSidebar"] .stMarkdown h3 {
+    color: #f8fafc !important;
+}
+section[data-testid="stSidebar"] .stButton > button {
+    background: #1e293b;
+    color: #f1f5f9 !important;
+    border: 1px solid #475569;
+    border-radius: 12px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+section[data-testid="stSidebar"] .stButton > button:hover {
+    background: #334155;
+    border-color: #38bdf8;
+    color: white !important;
+}
+section[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] > div {
+    background-color: #1e293b;
+    border-color: #475569;
+    color: #e2e8f0;
+}
+
+/* ---------- Metric Cards ---------- */
+div[data-testid="stMetric"] {
+    background: white;
+    padding: 18px 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.06);
+    border: 1px solid #e2e8f0;
+    text-align: center;
+}
+div[data-testid="stMetric"] label {
+    color: #64748b !important;
+    font-size: 0.85rem !important;
+}
+div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
+    color: #0f172a !important;
+    font-size: 1.7rem !important;
+    font-weight: 700 !important;
+}
+
+/* ---------- Chat Messages ---------- */
+div[data-testid="stChatMessage"] {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 14px 18px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    margin-bottom: 12px;
+}
+
+/* ---------- Chat Input (Typed text white) ---------- */
+div[data-testid="stChatInput"] textarea {
+    color: white !important;
+    background-color: #1e293b !important;
+    border: 1px solid #475569 !important;
+    border-radius: 4px !important;
+}
+div[data-testid="stChatInput"] textarea::placeholder {
+    color: #94a3b8 !important;
+}
+
+/* ---------- Titles ---------- */
+h1 {
+    letter-spacing: -1.2px;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+}
+
+/* Hide default Streamlit footer */
+footer {visibility: hidden;}
+#MainMenu {visibility: hidden;}
