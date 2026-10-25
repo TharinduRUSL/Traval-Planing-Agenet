@@ -71,15 +71,49 @@ div[data-testid="stChatMessage"] {
     margin-bottom: 12px;
 }
 
-/* ---------- Chat Input (Typed text white) ---------- */
+/* ---------- Chat Input ---------- */
+div[data-testid="stChatInput"] {
+    background-color: transparent !important;
+}
+div[data-testid="stChatInput"] > div {
+    background-color: #ffffff !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    transition: all 0.2s ease-in-out !important;
+}
+div[data-testid="stChatInput"] > div:focus-within {
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+}
 div[data-testid="stChatInput"] textarea {
-    color: white !important;
-    background-color: #1e293b !important;
-    border: 1px solid #475569 !important;
-    border-radius: 4px !important;
+    color: #0f172a !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-size: 0.95rem !important;
 }
 div[data-testid="stChatInput"] textarea::placeholder {
-    color: #94a3b8 !important;
+    color: #64748b !important;
+}
+div[data-testid="stChatInput"] button {
+    color: #0284c7 !important;
+    background: transparent !important;
+    border: none !important;
+    transition: transform 0.15s ease, color 0.15s ease !important;
+}
+div[data-testid="stChatInput"] button:hover {
+    color: #0369a1 !important;
+    transform: scale(1.05) !important;
+}
+
+/* ---------- Main Area Selectbox ---------- */
+.block-container div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+    background-color: #ffffff !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 12px !important;
+    color: #0f172a !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
 }
 
 /* ---------- Titles ---------- */
