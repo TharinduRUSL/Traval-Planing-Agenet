@@ -18,10 +18,20 @@ def get_weather(city: str, start_date: str, days: int = 1) -> dict:
     city = text(city, "city")
     start = date.fromisoformat(text(start_date, "start_date"))
     integer(days, "days", 1, 16)
-    geo = fetch("https://geocoding-api.open-meteo.com/v1/search", {"name": city, "count": 1, "language": "en", "format": "json"})
+    geo = fetch("https://geocoding-api.open-meteo.com/v1/search", {"name": city, "count": 5, "language": "en", "format": "json"})
     if not geo.get("results"):
         raise ValueError("City not found. Try a more specific city name.")
-    place = geo["results"][0]
+    candidates = geo["results"]
+    country_codes = {"colombo": "LK", "kandy": "LK", "paris": "FR", "london": "GB"}
+    expected_country = country_codes.get(city.lower())
+    if expected_country:
+        candidates = [item for item in candidates if item.get("country_code") == expected_country]
+        if not candidates:
+            raise ValueError("The API did not return the supported city's expected country. Retry later.")
+    elif len(candidates) > 1:
+        names = "; ".join(f"{item.get('name')} / {item.get('admin1', '')} / {item.get('country', '')}" for item in candidates)
+        raise ValueError("Ambiguous city. Supply a more specific destination. Candidates: " + names)
+    place = candidates[0]
     today = datetime.now(ZoneInfo(place.get("timezone", "UTC"))).date()
     end = start + timedelta(days=days - 1)
     if start < today or end > today + timedelta(days=15):
