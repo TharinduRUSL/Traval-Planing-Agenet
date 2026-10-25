@@ -11,7 +11,7 @@ def app():
 
     st.set_page_config(
         page_title="TravelStudio • AI Trip Planner",
-        page_icon="✈️",
+        page_icon="",
         layout="wide",
         initial_sidebar_state="expanded"
     )
@@ -26,7 +26,7 @@ def app():
 
     # ====================== SIDEBAR ======================
     with st.sidebar:
-        st.markdown("## ✈️ TravelStudio")
+        st.markdown("##  TravelStudio")
         st.caption("Your local AI planning companion")
 
         st.markdown("---")
@@ -69,14 +69,14 @@ def app():
         st.caption("Chat memory lasts for this browser session.\nSaved JSON files survive restarts.")
 
         st.markdown("---")
-        st.markdown("### 📁 Saved itineraries")
+        st.markdown("")
         files = sorted(DATA_DIR.glob("*.json")) if DATA_DIR.exists() else []
         if files:
             selected = st.selectbox("Choose a file", [p.name for p in files], label_visibility="collapsed")
             loaded = load_itinerary(selected)
             if loaded["ok"]:
                 st.download_button(
-                    "⬇ Download JSON",
+                    "Download JSON",
                     json.dumps(loaded["data"]["itinerary"], indent=2, ensure_ascii=False),
                     file_name=selected,
                     mime="application/json",
@@ -139,7 +139,7 @@ def app():
         prompt = st.chat_input(EXAMPLES[selected_tool], key="travel_prompt")
 
     if selected_tool is None:
-        st.caption("✨ **All tools** — the agent will automatically choose the tools needed for your request.")
+        st.caption(" **All tools** — the agent will automatically choose the tools needed for your request.")
     else:
         st.caption(f"Selected: `{selected_tool}`. Enter the details, then send. Choose **All tools** for a complete trip.")
 
@@ -158,7 +158,7 @@ def app():
 
             for event in run_agent(st.session_state.messages, prompt, selected_tool=selected_tool):
                 if event["type"] == "step":
-                    status.info(f"🧠 Planning · model step {event['step']} of 10")
+                    status.info(f" Planning · model step {event['step']} of 10")
                 elif event["type"] == "tool_start":
                     active = st.expander(f"Step {event['step']} · {event['name']}", expanded=True)
                     active.caption("Arguments")
