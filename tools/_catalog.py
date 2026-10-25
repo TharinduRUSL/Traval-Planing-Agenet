@@ -19,3 +19,8 @@ def city_key(city):
     if key not in CITIES:
         raise ValueError("Curated data supports Colombo, Kandy, Paris and London only.")
     return key
+
+
+def supported_cities() -> list[str]:
+    """Shared UI/backend city list; helper, not a tenth tool."""
+    return [name.title() for name in CITIES]
