@@ -5,11 +5,16 @@ from datetime import date
 from pathlib import Path
 from urllib.parse import urlparse
 from dotenv import load_dotenv
-from ollama import Client
+from ollama import Client, ResponseError
+from httpx import TimeoutException
+import logging
+
+LOGGER = logging.getLogger(__name__)
 from tools import TOOLS, TOOL_MAP
 
 load_dotenv(Path(__file__).parent / ".env")
 # qwen2.5:3b is a compact 3-billion-parameter tool-calling model for local laptops.
+
 MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:3b")
 MAX_STEPS = 10
 SYSTEM_PROMPT = """You are a careful Travel Planning Assistant. Use tools to obtain facts and perform calculations.
@@ -21,6 +26,8 @@ Catalog admissions are illustrative USD per-person prices. Meals/transport are c
 Weather may be unavailable; report that, and do not invent a forecast. Only use explicitly disclosed assumptions for provisional packing.
 Never claim a tool succeeded when ok=false. Do not invent attractions outside the supported catalog or live prices/hours/routes.
 For save requests, call save_itinerary with the COMPLETE plan as a JSON string: destination, days (objects with date and non-empty activities list), budget (calculated breakdown), plus weather status, packing and tips when available.
+Each day must have a valid YYYY-MM-DD date and a list of non-empty activity strings, with consecutive dates.
+The budget object MUST include currency, meals, transport, admissions, contingency and total copied from calculate_budget; these totals are for the whole group.
 Never save a summary that omits daily activities. Never claim saved unless tool confirms saved=true. Overwrite only if explicitly requested by the user.
 For load requests, call load_itinerary. For follow-up budget changes, recalculate before answering and save again only when requested.
 Format answers with: Trip overview; Day-by-day itinerary; Budget breakdown and exclusions; Weather/packing; Local tips; Saved file (only on success); Assumptions and limitations.
@@ -70,7 +77,7 @@ def run_agent(messages: list[dict], user_text: str, client=None, selected_tool: 
             yield {"type": "step", "step": step}
             # This temporary system instruction is rebuilt each turn, not stored.
             request_messages = [
-                {**messages[0], "content": messages[0]["content"] + "\nCurrent tool selection: " + scope},
+                {**messages[0], "content": messages[0]["content"] + f"\nCurrent local date: {date.today().isoformat()}." + "\nCurrent tool selection: " + scope},
                 *messages[1:],
             ]
             response = client.chat(model=MODEL, messages=request_messages, tools=active_tools,
@@ -78,14 +85,19 @@ def run_agent(messages: list[dict], user_text: str, client=None, selected_tool: 
             message = response.message.model_dump(exclude_none=True)
             messages.append(message)  # Retain text AND requested tool calls.
             calls = message.get("tool_calls") or []
+            if not isinstance(calls, list):
+                raise ValueError("Model tool_calls must be a list.")
             if not calls:
                 answer = message.get("content") or "The model returned an empty answer. Please retry with a shorter request."
                 message["content"] = answer
                 yield {"type": "final", "content": answer}
                 return
             for call in calls:
-                name = call["function"]["name"]
-                args = call["function"].get("arguments", {})
+                function = call.get("function", {}) if isinstance(call, dict) else {}
+                name = function.get("name", "") if isinstance(function, dict) else ""
+                if not isinstance(name, str) or not name:
+                    raise ValueError("Model returned a malformed tool call without a name.")
+                args = function.get("arguments", {})
                 yield {"type": "tool_start", "step": step, "name": name, "arguments": args}
                 # Only explicitly registered functions can execute; never eval model text.
                 try:
@@ -105,7 +117,14 @@ def run_agent(messages: list[dict], user_text: str, client=None, selected_tool: 
                                  "content": json.dumps(result, ensure_ascii=False)})
                 yield {"type": "tool_result", "step": step, "name": name, "arguments": args, "result": result}
         answer = "Stopped after 10 model steps. The trace shows completed actions, including any saved files. The full plan may be unfinished; ask to continue with a narrower request."
-    except Exception as exc:
-        answer = f"Ollama could not complete the request ({type(exc).__name__}). Check that Ollama is running, run 'ollama pull {MODEL}', and retry. No final plan is confirmed; inspect the trace for completed tool actions."
+    except (ConnectionError, TimeoutException) as exc:
+        answer = f"Local Ollama connection failed or timed out ({type(exc).__name__}). Start Ollama, run 'ollama pull {MODEL}', and retry. Inspect the trace for completed tool actions."
+    except ResponseError as exc:
+        answer = f"Ollama returned an error (status {exc.status_code}). Check the installed model with 'ollama list'. Inspect the trace for completed actions."
+    except (ValueError, TypeError, KeyError) as exc:
+        answer = f"Configuration or model-response error: {exc}. Check settings and retry with a shorter request."
+    except Exception:
+        LOGGER.exception("Unexpected agent failure")
+        answer = "An internal application error interrupted planning. Check the terminal log. Your completed tool actions are visible in the trace."
     messages.append({"role": "assistant", "content": answer})
     yield {"type": "final", "content": answer}

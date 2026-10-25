@@ -3,3 +3,4 @@ streamlit>=1.41,<2
 requests>=2.32,<3
 python-dotenv>=1.0,<2
 tzdata>=2024.1
+httpx>=0.28,<1
