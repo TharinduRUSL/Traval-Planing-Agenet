@@ -1,5 +1,8 @@
 """Persistent JSON storage confined to this project's data directory."""
 import json
+from datetime import date, timedelta
+from decimal import Decimal
+import math
 import os
 import re
 import tempfile
@@ -21,17 +24,44 @@ def itinerary_path(filename):
 
 
 def validate_itinerary(content):
+    """Check new and loaded plans using the same documented schema."""
     if not isinstance(content, dict):
         raise ValueError("Itinerary must be a JSON object.")
-    if not isinstance(content.get("destination"), str) or not content["destination"].strip():
-        raise ValueError("Itinerary needs a destination string.")
-    if not isinstance(content.get("days"), list) or not 1 <= len(content["days"]) <= 30:
-        raise ValueError("Itinerary needs a days list with 1 to 30 day objects.")
-    for day in content["days"]:
-        if not isinstance(day, dict) or not isinstance(day.get("activities"), list) or not day["activities"]:
-            raise ValueError("Each day needs a non-empty activities list.")
-    if not isinstance(content.get("budget"), dict) or not content["budget"]:
-        raise ValueError("Itinerary needs a budget object containing the calculated breakdown.")
+    text(content.get("destination"), "destination")
+    days = content.get("days")
+    if not isinstance(days, list) or not 1 <= len(days) <= 30:
+        raise ValueError("Itinerary needs 1 to 30 day objects.")
+    previous = None
+    for day in days:
+        if not isinstance(day, dict):
+            raise ValueError("Each day must be an object with date and activities.")
+        raw_date = day.get("date")
+        if not isinstance(raw_date, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", raw_date):
+            raise ValueError("Each day needs a YYYY-MM-DD date.")
+        current = date.fromisoformat(raw_date)
+        if previous is not None and current != previous + timedelta(days=1):
+            raise ValueError("Day dates must be consecutive and in order.")
+        previous = current
+        activities = day.get("activities")
+        if not isinstance(activities, list) or not 1 <= len(activities) <= 30:
+            raise ValueError("Each day needs 1 to 30 activity strings.")
+        if any(not isinstance(item, str) or not item.strip() or len(item) > 2000 for item in activities):
+            raise ValueError("Activities must be non-empty strings under 2000 characters.")
+    budget = content.get("budget")
+    if not isinstance(budget, dict):
+        raise ValueError("A budget object is required.")
+    currency = budget.get("currency")
+    if not isinstance(currency, str) or not re.fullmatch(r"[A-Z]{3}", currency):
+        raise ValueError("budget.currency must be an uppercase three-letter code.")
+    amounts = {}
+    for key in ("meals", "transport", "admissions", "contingency", "total"):
+        value = budget.get(key)
+        if isinstance(value, bool) or not isinstance(value, (float, int)) or not math.isfinite(value) or not 0 <= value <= 1_000_000_000:
+            raise ValueError(f"budget.{key} must be a finite non-negative number.")
+        amounts[key] = Decimal(str(value))
+    subtotal = sum(amounts[key] for key in ("meals", "transport", "admissions", "contingency"))
+    if abs(subtotal - amounts["total"]) > Decimal("0.01"):
+        raise ValueError("budget.total must equal meals + transport + admissions + contingency (within one cent).")
     return content
 
 
